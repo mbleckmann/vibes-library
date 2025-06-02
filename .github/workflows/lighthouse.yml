@@ -1,0 +1,40 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1 – check out code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2 – install Node + pnpm / npm
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3 – install deps, build, export
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build       # next build
+          npm run export      # outputs to out/
+
+      # 4 – start static server (port 8080)
+      - name: Start static server
+        run: npx serve -s out -l 8080 &
+      
+      # 5 – run Lighthouse CI
+      - name: Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          configPath: ./lighthouserc.json
+          # upload to temporary storage so URLs show in PR
+          temporaryPublicStorage: true
